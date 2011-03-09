@@ -3,7 +3,9 @@ use strict;
 use DBI;
 use LWP::UserAgent;
 use XML::XPath;
+use Encode;
 
+my $VERSION='0.1';
 my $database = "db/database";
 my $dsn = "DBI:SQLite:dbname=$database;";
 my $user = "";
@@ -13,28 +15,28 @@ if (!$dbh) {
     die "Can't connect to $dsn: $!";
 }
 my $webapp=LWP::UserAgent->new();
-$webapp->agent('YXMLS 0.1');
+$webapp->agent("YXMLS $VERSION");
 my $xml='';
 
-&XMLRequest();
-
+&XMLRequest;
 
 sub XMLRequest()
 {
     my $reqid='';
     my $reqid_tag='';
     my $page=0;
-    my $lastpage=2;#Ограничение на количество страниц в выборке
+    my $lastpage=0;#Ограничение на количество страниц в выборке
     my $xmldoc='';
+    my @parsesite=();
     for ($page=0;$page<=$lastpage;$page++)
     {
         $xmldoc=<<DOC;
 <?xml version="1.0" encoding="UTF-8"?> 	
 <request> 	
-	<query>(купить парфюмерия) интернет магазин</query>
+	<query>(купить джинсы) интернет магазин</query>
         <maxpassages>4</maxpassages>
 	<groupings>
-		<groupby attr="d" mode="deep" groups-on-page="5"  docs-in-group="1" /> 	
+		<groupby attr="d" mode="deep" groups-on-page="10"  docs-in-group="1" /> 	
 	</groupings> 	
         <page>$page</page>
 </request>
@@ -71,21 +73,81 @@ DOC
                 print $xml->findvalue('mime-type',$_);
                 print "\t";
                 print "\n";
+                @parsesite=($xml->findvalue('domain',$_),
+                            $xml->findvalue('charset',$_),
+                            $xml->findvalue('mime-type',$_)
+                            );
+                if($parsesite[2] eq 'text/html')
+                {
+                    &SiteParse(@parsesite);
+                }
             }
         }
+    }
+}
+
+#Парсинг сайта
+#Usage: DOMAIN,CHARSET
+sub SiteParse()
+{
+    print "Starting parse site: $_[0]\n";
+    my $content='';
+    my $parse=HTTP::Request->new(GET=>"http://$_[0]");
+    $parse->content_type('text/html');
+    my $response=$webapp->request($parse);
+    my $count=0;
+    if($response->is_success)
+    {
+        $content=$response->content;
+        Encode::from_to($content,$_[1],'utf-8');
+        #print $content;
+        print 'Searching contacts...';
+        if($content=~/.*(КОНТАКТЫ|Контакты|контакты|О МАГАЗИНЕ|О магазине|О НАС|О нас|О КОМПАНИИ|О компании|о компании).*/)
+        {
+            print "Ok\n";
+            $count++;
+        }
+        else
+        {
+            print "False\n";
+        }
+        print 'Searching catalog...';
+        if($content=~/.*(КАТАЛОГ|Каталог|каталог).*/)
+        {
+            print "Ok\n";
+            $count++;
+        }
+        else
+        {
+            print "False\n";
+        }
+        print 'Searching delivery options...';
+        if($content=~/.*(ДОСТАВКА|Доставка|доставка|ОПЛАТА|Оплата|оплата|О ДОСТАВКЕ|О доставке|ДОСТАВКА И ОПЛАТА|Доставка и оплата|ОПЛАТА И ДОСТАВКА|Оплата и доставка).*/)
+        {
+            print "Ok\n";
+            $count++;
+        }
+        else
+        {
+            print "False\n";
+        }
+        print "Total count: $count\n";
+        if($count>=2)
+        {
+            &DBRec($_[0],$count);
+        }
+    }
+    else
+    {
+        print $response->status_line."\n";
     }
 }
 
 #Процедура записи данных в БД
 sub DBRec()
 {
-    my $sth = $dbh->prepare("SELECT * FROM sites");
+    my $sth = $dbh->prepare("INSERT INTO sites (id,url,date,count) VALUES(NULL,'$_[0]',DATE(),$_[1])");
     $sth->execute;
-    while (my @row = $sth->fetchrow_array)
-    {
-        printf "%-20s : %s\n", $sth->{NAME}->[$_], $row[$_] for 0..@row-1;
-        print "\n";
-    }
 }
 
 $dbh->disconnect;
