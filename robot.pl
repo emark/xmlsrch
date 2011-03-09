@@ -13,7 +13,7 @@ if (!$dbh) {
     die "Can't connect to $dsn: $!";
 }
 my $webapp=LWP::UserAgent->new();
-$webapp->agent('YaXMLSch 0.1');
+$webapp->agent('YXMLS 0.1');
 my $xml='';
 
 &XMLRequest();
@@ -23,39 +23,55 @@ sub XMLRequest()
 {
     my $reqid='';
     my $reqid_tag='';
-    my $xmldoc=<<DOC;
+    my $page=0;
+    my $lastpage=2;#Ограничение на количество страниц в выборке
+    my $xmldoc='';
+    for ($page=0;$page<=$lastpage;$page++)
+    {
+        $xmldoc=<<DOC;
 <?xml version="1.0" encoding="UTF-8"?> 	
 <request> 	
-	<query>(купить джинсы) интернет магазин (ОГРН доставка)</query>
+	<query>(купить парфюмерия) интернет магазин</query>
+        <maxpassages>4</maxpassages>
 	<groupings>
 		<groupby attr="d" mode="deep" groups-on-page="5"  docs-in-group="1" /> 	
 	</groupings> 	
-<page>0</page>
-$reqid_tag
+        <page>$page</page>
 </request>
 DOC
-    
-    #формируем HTTP запрос
-    my $req=HTTP::Request->new(POST=>'http://xmlsearch.yandex.ru/xmlsearch?user=emarkllc&key=03.82612598:b5ad3ae6a2ab55b9f578e3c9e7a4149a&lr=225');
-    $req->content_type('application/xml');
-    $req->content($xmldoc);
-    my $response=$webapp->request($req);
-    $xml=$response->content;
-    $xml=XML::XPath->new(xml=>$xml);
-    my $found= $xml -> findvalue ('/yandexsearch/response/found');
-    my $error = $xml -> findvalue ('/yandexsearch/response/error');
-    my @found = $xml -> findnodes ("/yandexsearch/response/results/grouping/group/doc");
-    print "Found: $found\n";
-    if($error ne '')
-    {
-        print "Error: $error";
-    }
-    else
-    {
-        foreach (@found)
+        #print $xmldoc;
+        #формируем HTTP запрос
+        my $req=HTTP::Request->new(POST=>'http://xmlsearch.yandex.ru/xmlsearch?user=emarkllc&key=03.82612598:b5ad3ae6a2ab55b9f578e3c9e7a4149a&lr=225');
+        $req->content_type('application/xml');
+        $req->content($xmldoc);
+        my $response=$webapp->request($req);
+        $xml=$response->content;
+        $xml=XML::XPath->new(xml=>$xml);
+        my $found= $xml -> findvalue ('/yandexsearch/response/found');
+        my $error = $xml -> findvalue ('/yandexsearch/response/error');
+        my @found = $xml -> findnodes ('/yandexsearch/response/results/grouping/group/doc');
+        #$reqid=$xml->findvalue('/yandexsearch/response/reqid');
+        #$reqid_tag="<reqid>$reqid</reqid>";
+        #$page=$xml->findvalue('/yandexsearch/response/results/grouping/page');
+        #print "RequestID: $reqid\n";
+        print "Found: $found\n";
+        print "Page: $page\n";
+        if($error ne '')
         {
-            print $xml->findvalue('domain',$_);
-            print "\n";
+            print "Error: $error";
+        }
+        else
+        {
+            foreach (@found)
+            {
+                print $xml->findvalue('domain',$_);
+                print "\t";
+                print $xml->findvalue('charset',$_);
+                print "\t";
+                print $xml->findvalue('mime-type',$_);
+                print "\t";
+                print "\n";
+            }
         }
     }
 }
