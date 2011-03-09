@@ -27,13 +27,17 @@ sub XMLRequest()
     my $page=0;
     my $lastpage=0;#Ограничение на количество страниц в выборке
     my $xmldoc='';
+    my $query='';
     my @parsesite=();
+    open (FILE,"query.qr")|| die '';
+        $query=<FILE>;
+    close FILE;
     for ($page=0;$page<=$lastpage;$page++)
     {
         $xmldoc=<<DOC;
 <?xml version="1.0" encoding="UTF-8"?> 	
 <request> 	
-	<query>(купить джинсы) интернет магазин</query>
+	<query>$query</query>
         <maxpassages>4</maxpassages>
 	<groupings>
 		<groupby attr="d" mode="deep" groups-on-page="10"  docs-in-group="1" /> 	
