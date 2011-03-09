@@ -17,6 +17,7 @@ if (!$dbh) {
 my $webapp=LWP::UserAgent->new();
 $webapp->agent("YXMLS $VERSION");
 my $xml='';
+my $totalurl=1;
 
 &XMLRequest;
 
@@ -83,8 +84,10 @@ DOC
                             );
                 if($parsesite[2] eq 'text/html')
                 {
+                    print "---------------------\n#$totalurl\n";
                     &SiteParse(@parsesite);
                 }
+                $totalurl++;
             }
         }
     }
