@@ -28,7 +28,7 @@ sub XMLRequest()
     my $reqid='';
     my $reqid_tag='';
     my $page=0;
-    my $lastpage=0;#Ограничение на количество страниц в выборке
+    my $lastpage=30;#Ограничение на количество страниц в выборке
     my $xmldoc='';
     my @query='';
     my @parsesite=();
@@ -43,7 +43,7 @@ sub XMLRequest()
 	<query>$query[0]</query>
         <maxpassages>4</maxpassages>
 	<groupings>
-		<groupby attr="d" mode="deep" groups-on-page="2"  docs-in-group="1" /> 	
+		<groupby attr="d" mode="deep" groups-on-page="100"  docs-in-group="1" /> 	
 	</groupings> 	
         <page>$page</page>
 </request>
