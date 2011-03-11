@@ -6,7 +6,7 @@ use XML::XPath;
 use Encode;
 binmode(STDOUT, ":utf8");
 
-my $VERSION='0.1';
+my $VERSION='0.2';
 my $database = "db/database";
 my $dsn = "DBI:SQLite:dbname=$database;";
 my $user = "";
@@ -15,10 +15,11 @@ my $dbh = DBI->connect($dsn, $user, $pass);
 if (!$dbh) {
     die "Can't connect to $dsn: $!";
 }
+my $sth =$dbh->prepare("DELETE FROM sites")->execute;#Очистка БД перед запуском
 my $webapp=LWP::UserAgent->new();
 $webapp->agent("YXMLS $VERSION");
 my $xml='';
-my $totalurl=0;
+my $srchposition=0;#Позиция в поиске
 
 &XMLRequest;
 
@@ -26,8 +27,8 @@ sub XMLRequest()
 {
     my $reqid='';
     my $reqid_tag='';
-    my $page=11;
-    my $lastpage=11;#Ограничение на количество страниц в выборке
+    my $page=0;
+    my $lastpage=0;#Ограничение на количество страниц в выборке
     my $xmldoc='';
     my @query='';
     my @parsesite=();
@@ -42,7 +43,7 @@ sub XMLRequest()
 	<query>$query[0]</query>
         <maxpassages>4</maxpassages>
 	<groupings>
-		<groupby attr="d" mode="deep" groups-on-page="10"  docs-in-group="1" /> 	
+		<groupby attr="d" mode="deep" groups-on-page="2"  docs-in-group="1" /> 	
 	</groupings> 	
         <page>$page</page>
 </request>
@@ -73,8 +74,7 @@ DOC
         {
             foreach (@found)
             {
-                $totalurl++;
-                print "#$totalurl ";
+                $srchposition++;
                 print $xml->findvalue('domain',$_);
                 print "...";
                 #print $xml->findvalue('charset',$_);
@@ -121,7 +121,7 @@ DOC
                     if($parseaccess>=0.5)
                     {
                         print "Parse: \n";
-                        #&SiteParse(@parsesite);
+                        &SiteParse(@parsesite);
                     }
                     else
                     {
@@ -193,7 +193,7 @@ sub SiteParse()
 #Процедура записи данных в БД
 sub DBRec()
 {
-    my $sth = $dbh->prepare("INSERT INTO sites (id,url,date,count) VALUES(NULL,'$_[0]',DATE(),$_[1])");
+    $sth = $dbh->prepare("INSERT INTO sites (id,url,date,count,position) VALUES(NULL,'$_[0]',DATE(),$_[1],$srchposition)");
     $sth->execute;
 }
 
