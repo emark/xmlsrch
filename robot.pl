@@ -4,6 +4,7 @@ use DBI;
 use LWP::UserAgent;
 use XML::XPath;
 use Encode;
+binmode(STDOUT, ":utf8");
 
 my $VERSION='0.1';
 my $database = "db/database";
@@ -17,7 +18,7 @@ if (!$dbh) {
 my $webapp=LWP::UserAgent->new();
 $webapp->agent("YXMLS $VERSION");
 my $xml='';
-my $totalurl=1;
+my $totalurl=0;
 
 &XMLRequest;
 
@@ -25,23 +26,23 @@ sub XMLRequest()
 {
     my $reqid='';
     my $reqid_tag='';
-    my $page=0;
-    my $lastpage=100;#Ограничение на количество страниц в выборке
+    my $page=11;
+    my $lastpage=11;#Ограничение на количество страниц в выборке
     my $xmldoc='';
-    my $query='';
+    my @query='';
     my @parsesite=();
     open (FILE,"query.qr")|| die '';
-        $query=<FILE>;
+        @query=<FILE>;
     close FILE;
-    for ($page=0;$page<=$lastpage;$page++)
+    for ($page=$page;$page<=$lastpage;$page++)
     {
         $xmldoc=<<DOC;
 <?xml version="1.0" encoding="UTF-8"?> 	
 <request> 	
-	<query>$query</query>
+	<query>$query[0]</query>
         <maxpassages>4</maxpassages>
 	<groupings>
-		<groupby attr="d" mode="deep" groups-on-page="100"  docs-in-group="1" /> 	
+		<groupby attr="d" mode="deep" groups-on-page="10"  docs-in-group="1" /> 	
 	</groupings> 	
         <page>$page</page>
 </request>
@@ -53,6 +54,7 @@ DOC
         $req->content($xmldoc);
         my $response=$webapp->request($req);
         $xml=$response->content;
+        #print $xml;exit;
         $xml=XML::XPath->new(xml=>$xml);
         my $found= $xml -> findvalue ('/yandexsearch/response/found');
         my $error = $xml -> findvalue ('/yandexsearch/response/error');
@@ -71,23 +73,61 @@ DOC
         {
             foreach (@found)
             {
+                $totalurl++;
+                print "#$totalurl ";
                 print $xml->findvalue('domain',$_);
-                print "\t";
-                print $xml->findvalue('charset',$_);
-                print "\t";
-                print $xml->findvalue('mime-type',$_);
-                print "\t";
-                print "\n";
+                print "...";
+                #print $xml->findvalue('charset',$_);
+                #print "\t";
+                #print $xml->findvalue('mime-type',$_);
+                #print "\t";
                 @parsesite=($xml->findvalue('domain',$_),
                             $xml->findvalue('charset',$_),
-                            $xml->findvalue('mime-type',$_)
+                            $xml->findvalue('mime-type',$_),
+                            $xml->findvalue('title/hlword',$_),
+                            $xml->findvalue('passages/passage/hlword',$_),
                             );
                 if($parsesite[2] eq 'text/html')
                 {
-                    print "---------------------\n#$totalurl\n";
-                    &SiteParse(@parsesite);
+                    my $titlecheck=0;
+                    my $passagcheck=0;
+                    my $totalkeys=0;
+                    my $ukey='';
+                    my $parseaccess=0;
+                    #проверка на наличие ключевых слов в заголовке и пассаже
+                    foreach my $key(@query)
+                    {
+                        chomp $key;
+                        my $ukey=decode_utf8($key);
+                        
+                        #print "$ukey=";
+                        #print "$parsesite[3]";
+                        
+                        if($parsesite[3]=~/.*($ukey).*/)
+                        {
+                            $titlecheck++;
+                            #print "..Ok\n";
+                        }
+                        if($parsesite[4]=~/.*($ukey).*/)
+                        {
+                            $passagcheck++;
+                            #print "..Ok\n";
+                        }
+                        $totalkeys++;
+                    }
+                    $totalkeys=($totalkeys-1)*2;
+                    $parseaccess=($titlecheck+$passagcheck)/$totalkeys;
+                    #print "\n$titlecheck\t$passagcheck\t$totalkeys\t$parseaccess\n";
+                    if($parseaccess>=0.5)
+                    {
+                        print "Parse: \n";
+                        #&SiteParse(@parsesite);
+                    }
+                    else
+                    {
+                        print "Not parse\n";
+                    }
                 }
-                $totalurl++;
             }
         }
     }
