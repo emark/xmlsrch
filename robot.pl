@@ -6,7 +6,7 @@ use XML::XPath;
 use Encode;
 binmode(STDOUT, ":utf8");
 
-my $VERSION='0.2';
+my $VERSION='0.2.1';
 my $database = "db/database";
 my $dsn = "DBI:SQLite:dbname=$database;";
 my $user = "";
