@@ -5,6 +5,7 @@ use LWP::UserAgent;
 use XML::XPath;
 use Encode;
 binmode(STDOUT, ":utf8");
+use Jabber::SimpleSend qw(send_jabber_message);
 
 my $VERSION='0.2.2';
 my $database = "db/database";
@@ -20,8 +21,11 @@ my $webapp=LWP::UserAgent->new();
 $webapp->agent("YXMLS $VERSION");
 my $xml='';
 my $srchposition=0;#Позиция в поиске
+my $lookingsites=0;
+my $checkedsites=0;
 
 &XMLRequest;
+&JabberAlert($lookingsites,$checkedsites);
 
 sub XMLRequest()
 {
@@ -122,6 +126,7 @@ DOC
                     {
                         print "Parse: \n";
                         &SiteParse(@parsesite);
+                        $lookingsites++;
                     }
                     else
                     {
@@ -182,6 +187,7 @@ sub SiteParse()
         print "Total count: $count\n";
         if($count>=2)
         {
+            $checkedsites++;
             &DBRec($_[0],$count,$mode);
         }
     }
@@ -204,7 +210,17 @@ sub DBRec()
     return $check;
 }
 
+sub JabberAlert(){
+send_jabber_message({
+                       user     => 'xmlsrch@jabber.org',
+                       password => 'x0A8Acs1gj',
+                       target   => 'emark@jabber.org',
+                       subject  => 'Search finished',
+                       message  => "Search finished\nChecked $_[1] sites from $_[0]"});
+}
+
 $dbh->disconnect;
 
 #Tests
 #my @sites=('test.ru','www.web2buy.ru','mail.ru');foreach(@sites){print &DBRec($_,0,1);}
+#xmlsrch@jabber.org x0A8Acs1gj
