@@ -5,7 +5,7 @@ use LWP::UserAgent;
 use XML::XPath;
 use Encode;
 binmode(STDOUT, ":utf8");
-use Jabber::SimpleSend qw(send_jabber_message);
+use Net::XMPP;
 
 my $VERSION='0.2.2';
 my $database = "db/database";
@@ -211,12 +211,17 @@ sub DBRec()
 }
 
 sub JabberAlert(){
-send_jabber_message({
-                       user     => 'xmlsrch@jabber.org',
-                       password => 'x0A8Acs1gj',
-                       target   => 'emark@jabber.org',
-                       subject  => 'Search finished',
-                       message  => "Search finished\nChecked $_[1] sites from $_[0]"});
+my $con=new Net::XMPP::Client();
+$con->Connect(hostname=>"jabber.org");
+$con->AuthSend(username=>"xmlsrch",
+                        password=>"x0A8Acs1gj",
+                        resource=>"ALARM!");
+my $msg=new Net::XMPP::Message();
+$msg->SetMessage(to=>"emark\@jabber.org",
+                 from=>"xmlsrch\@jabber.org",
+                 body=>"Search finished\nChecked $_[1] sites from $_[0]");
+$con->Send($msg);
+$con->Disconnect();
 }
 
 $dbh->disconnect;
