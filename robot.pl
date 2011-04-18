@@ -6,7 +6,7 @@ use XML::XPath;
 use Encode;
 binmode(STDOUT, ":utf8");
 
-my $VERSION='0.2.1';
+my $VERSION='0.2.2';
 my $database = "db/database";
 my $dsn = "DBI:SQLite:dbname=$database;";
 my $user = "";
@@ -15,7 +15,7 @@ my $dbh = DBI->connect($dsn, $user, $pass);
 if (!$dbh) {
     die "Can't connect to $dsn: $!";
 }
-my $sth =$dbh->prepare("DELETE FROM sites")->execute;#Очистка БД перед запуском
+my $sth;
 my $webapp=LWP::UserAgent->new();
 $webapp->agent("YXMLS $VERSION");
 my $xml='';
@@ -143,7 +143,8 @@ sub SiteParse()
     $parse->content_type('text/html');
     my $response=$webapp->request($parse);
     my $count=0;
-    if($response->is_success)
+    my $mode=0;#Режим запуска функции DBRec
+    if($response->is_success && !&DBRec($_[0],0,1))
     {
         $content=$response->content;
         Encode::from_to($content,$_[1],'utf-8');
@@ -181,7 +182,7 @@ sub SiteParse()
         print "Total count: $count\n";
         if($count>=2)
         {
-            &DBRec($_[0],$count);
+            &DBRec($_[0],$count,$mode);
         }
     }
     else
@@ -191,10 +192,19 @@ sub SiteParse()
 }
 
 #Процедура записи данных в БД
+#0-URL;1-count;2-mode(check,rec)
 sub DBRec()
 {
-    $sth = $dbh->prepare("INSERT INTO sites (id,url,date,count,position) VALUES(NULL,'$_[0]',DATE(),$_[1],$srchposition)");
-    $sth->execute;
+    my $check=0;
+    if($_[2]){
+        $check = $dbh->selectrow_array("SELECT ID FROM sites WHERE URL LIKE '$_[0]'") || 0;
+    }else{
+        $dbh->do("INSERT INTO sites (id,url,date,count,position) VALUES(NULL,'$_[0]',DATE(),$_[1],$srchposition)");
+    }
+    return $check;
 }
 
 $dbh->disconnect;
+
+#Tests
+#my @sites=('test.ru','www.web2buy.ru','mail.ru');foreach(@sites){print &DBRec($_,0,1);}
