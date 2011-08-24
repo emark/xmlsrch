@@ -24,6 +24,7 @@ my $srchposition=0;#Позиция в поиске
 my $lookingsites=0;
 my $checkedsites=0;
 
+&JabberAlert(0,0);
 &XMLRequest;
 &JabberAlert($lookingsites,$checkedsites);
 
@@ -32,7 +33,7 @@ sub XMLRequest()
     my $reqid='';
     my $reqid_tag='';
     my $page=0;
-    my $lastpage=80;#Ограничение на количество страниц в выборке
+    my $lastpage=50;#Ограничение на количество страниц в выборке
     my $xmldoc='';
     my @query='';
     my @parsesite=();
