@@ -55,7 +55,7 @@ sub XMLRequest()
 DOC
         #print $xmldoc;
         #формируем HTTP запрос
-        my $req=HTTP::Request->new(POST=>'http://xmlsearch.yandex.ru/xmlsearch?user=emarkllc&key=03.82612598:b5ad3ae6a2ab55b9f578e3c9e7a4149a&lr=225');
+        my $req=HTTP::Request->new(POST=>'http://xmlsearch.yandex.ru/xmlsearch?user=emarkllc&key=03.82612598:b5ad3ae6a2ab55b9f578e3c9e7a4149a&lr=62');#lr:	225 - Russia; 62 - Krasnoyarsk
         $req->content_type('application/xml');
         $req->content($xmldoc);
         my $response=$webapp->request($req);
