@@ -5,7 +5,7 @@ use LWP::UserAgent;
 use XML::XPath;
 use Encode;
 binmode(STDOUT, ":utf8");
-use Net::XMPP;
+#use Net::XMPP;
 
 my $VERSION='0.2.2';
 my $database = "db/database";
@@ -24,9 +24,9 @@ my $srchposition=0;#Позиция в поиске
 my $lookingsites=0;
 my $checkedsites=0;
 
-&JabberAlert(0,0);
+#&JabberAlert(0,0);
 &XMLRequest;
-&JabberAlert($lookingsites,$checkedsites);
+#&JabberAlert($lookingsites,$checkedsites);
 
 sub XMLRequest()
 {
