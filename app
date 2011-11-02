@@ -32,7 +32,7 @@ foreach my $query(@query){
 <request> 	
 	<query>$query</query>
 	<groupings>
-		<groupby attr="d" mode="deep" groups-on-page="2"  docs-in-group="1" />
+		<groupby attr="d" mode="deep" groups-on-page="100"  docs-in-group="1" />
 	</groupings> 	
         <page>$page</page>
 </request>
