@@ -56,5 +56,5 @@ XML
   }#for $page
   $n++;
 }#foreach @query
-print "Close db connection";
+print "Close db connection at ".localtime(time);
 $dbi=undef;
