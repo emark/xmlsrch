@@ -22,11 +22,12 @@ open(FILE,"< query.txt") || die "Can't open query file";
 my @query=<FILE>;
 close FILE;
 
+my $n=1;
 foreach my $query(@query){
   chomp $query;
   my ($query,$lastpage)=split(';',$query);
   for (my $page=0;$page<=$lastpage;$page++){
-    print "Create XML Schema doc for page: $page\n";
+    print "Create XML Schema $n from ".@query." for page $page from $lastpage\n";
     my $xmldoc=<<XML;
 <?xml version="1.0" encoding="UTF-8"?> 	
 <request> 	
@@ -38,7 +39,7 @@ foreach my $query(@query){
 </request>
 XML
 
-    print "POST query\n";
+    print "POST query \n";
     $tx=$ua->post($pubkey=>{'Content-Type'=>'application/xml'}=>$xmldoc)->res->dom;
     $tx->find('domain')->each(sub{push @res, $_->text});
     my $err='';
@@ -53,6 +54,7 @@ XML
     }
     
   }#for $page
+  $n++;
 }#foreach @query
 print "Close db connection";
 $dbi=undef;
