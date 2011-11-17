@@ -4,7 +4,7 @@ use strict;
 use Mojo::UserAgent;
 use Mojo::DOM;
 use DBIx::Custom;
-my $VERSION='0.1';
+my $VERSION='0.1.1';
 
 my $dbi=DBIx::Custom->connect(dsn=>"dbi:SQLite:dbname=db/database");
 
@@ -46,7 +46,7 @@ XML
     $tx->find('error')->first(sub{$err=$_->text});
     if($err eq ''){
       foreach (@res){
-        $dbi->insert({domain=>$_,page=>$page},table=>'sites');
+        $dbi->insert({domain=>$_,page=>$page,url=>$query},table=>'sites');
       }
     }else{
       print "Ops, I see error. Write it\n";
