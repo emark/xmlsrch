@@ -46,7 +46,7 @@ XML
     $tx->find('error')->first(sub{$err=$_->text});
     if($err eq ''){
       foreach (@res){
-        $dbi->insert({domain=>$_,page=>$page,url=>$query},table=>'sites');
+        $dbi->insert({domain=>$_,page=>$page,query=>$query},table=>'sites');
       }
     }else{
       print "Ops, I see error. Write it\n";
