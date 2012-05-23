@@ -18,7 +18,7 @@ my $ua=Mojo::UserAgent->new;
 my $tx=Mojo::DOM->new;
 my @res=();#XML responde
 
-open(FILE,"< query.txt") || die "Can't open query file";
+open(FILE,"< query.csv") || die "Can't open query file";
 my @query=<FILE>;
 close FILE;
 
